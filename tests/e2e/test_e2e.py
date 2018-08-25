@@ -10,12 +10,12 @@ import pytest
 from fonduer import Meta
 from fonduer.candidates import CandidateExtractor, MentionExtractor
 from fonduer.candidates.models import candidate_subclass, mention_subclass
-from fonduer.features import FeatureAnnotator
+from fonduer.features import FAnnotator
 from fonduer.learning import LSTM, GenerativeModel, LogisticRegression
 from fonduer.parser import Parser
 from fonduer.parser.models import Document, Sentence
 from fonduer.parser.preprocessors import HTMLDocPreprocessor
-from fonduer.supervision import LabelAnnotator, load_gold_labels
+from fonduer.supervision import LAnnotator, load_gold_labels
 from tests.shared.hardware_lfs import (
     LF_collector_aligned,
     LF_complement_left_row,
@@ -45,7 +45,7 @@ ATTRIBUTE = "stg_temp_max"
 DB = "e2e_test"
 
 
-@pytest.mark.skipif("CI" not in os.environ, reason="Only run e2e on Travis")
+#  @pytest.mark.skipif("CI" not in os.environ, reason="Only run e2e on Travis")
 def test_e2e_logistic_regression(caplog):
     """Run an end-to-end test on documents of the hardware domain."""
     caplog.set_level(logging.INFO)
@@ -183,8 +183,13 @@ def test_e2e_logistic_regression(caplog):
 
     train_cands = session.query(PartTemp).filter(PartTemp.split == 0).all()
 
-    featurizer = FeatureAnnotator(PartTemp)
+    featurizer = FAnnotator([PartTemp])
     F_train = featurizer.apply(split=0, replace_key_set=True, parallelism=PARALLEL)
+
+    import pdb
+
+    pdb.set_trace()
+
     logger.info(F_train.shape)
     F_dev = featurizer.apply(split=1, replace_key_set=False, parallelism=PARALLEL)
     logger.info(F_dev.shape)
@@ -203,7 +208,7 @@ def test_e2e_logistic_regression(caplog):
         LF_negative_number_left,
     ]
 
-    labeler = LabelAnnotator(PartTemp, lfs=stg_temp_lfs)
+    labeler = LAnnotator(PartTemp, lfs=stg_temp_lfs)
     L_train = labeler.apply(split=0, clear=True, parallelism=PARALLEL)
     logger.info(L_train.shape)
 
@@ -263,7 +268,7 @@ def test_e2e_logistic_regression(caplog):
         LF_not_temp_relevant,
     ]
 
-    labeler = LabelAnnotator(PartTemp, lfs=stg_temp_lfs_2)
+    labeler = LAnnotator(PartTemp, lfs=stg_temp_lfs_2)
     L_train = labeler.apply(
         split=0, clear=False, update_keys=True, update_values=True, parallelism=PARALLEL
     )
@@ -435,7 +440,7 @@ def test_e2e_LSTM(caplog):
 
     train_cands = session.query(PartTemp).filter(PartTemp.split == 0).all()
 
-    featurizer = FeatureAnnotator(PartTemp)
+    featurizer = FAnnotator(PartTemp)
     F_train = featurizer.apply(split=0, replace_key_set=True, parallelism=PARALLEL)
     logger.info(F_train.shape)
     F_dev = featurizer.apply(split=1, replace_key_set=False, parallelism=PARALLEL)
@@ -466,7 +471,7 @@ def test_e2e_LSTM(caplog):
         LF_not_temp_relevant,
     ]
 
-    labeler = LabelAnnotator(PartTemp, lfs=stg_temp_lfs)
+    labeler = LAnnotator(PartTemp, lfs=stg_temp_lfs)
     L_train = labeler.apply(split=0, clear=True, parallelism=PARALLEL)
     logger.info(L_train.shape)
 
